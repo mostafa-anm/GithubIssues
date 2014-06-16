@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Github issues</title>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script type="text/javascript" src="underscore.js"></script>
+	<script type="text/javascript" src="backbone.js"></script>
+	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+	<div id="form-wrap">
+		<form>
+			<label>Owner:</label> 
+			<input  id="owner_name" type="text"/>
+			<label>Repository:</label> 
+			<input id= "repo_name" type="text"/>
+			<label>Number of Issues:</label> 
+			<input id= "number_issues" type="text"/>
+			<input type="button" value="search" onclick="search()" />
+		</form>
+	</div>
+	<div id="result"></div>
+
+	<script type="text/javascript">
+
+		var search = function(){
+			var $owner = $('#owner_name').val();
+			var $repo = $('#repo_name').val();
+			var $number_issues = $('#number_issues').val();
+
+			var Model = Backbone.Model.extend();
+				
+			var Collection = Backbone.Collection.extend({
+				model: "Model",
+				url:'https://api.github.com/repos/' + $owner +'/' + $repo + '/issues?page=1&per_page='+ $number_issues,
+				parse: function(response){
+					if ( response.length !== 0 ){
+						for(var x in response){
+							var issue = new Model({
+								number: response[x].number,
+								title: response[x].title,
+								created_at: response[x].created_at
+							});
+							this.add(issue);
+						}
+					display();
+					}
+					else {
+						alert('No issues found for this Repository');
+					}												
+				}
+			});
+
+			var collection = new Collection();
+
+			collection.fetch({
+				error: function(){
+					alert("wrong Owner/Repository");
+				}
+			});
+				
+			var display = function(){
+				var DisplayView = Backbone.View.extend({
+					html: "<table id='table'><tr><th>Number</th><th>Title</th><th>Created at</th></tr></table>",
+					el: $('#result'),
+					collection: collection,
+					
+					initialize: function(){
+						this.render();
+					},
+					render: function(){
+						this.$el.html(this.html);
+						for (var i=0; i<this.collection.length; i++){
+							$('#table').append("<tr><td>"+ this.collection.at(i).attributes.number +"</td>" +
+											"<td>"+ this.collection.at(i).attributes.title +"</td>" +
+											"<td>"+ this.collection.at(i).attributes.created_at.substring(0,10) +"</td>" +
+											"</tr>"
+							);
+						}
+					}
+				});
+				var displayview = new DisplayView();
+			};				
+		};
+
+	</script>
+</body>
+</html>
